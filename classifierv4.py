@@ -15,7 +15,8 @@ test results:
 v1: normal
 v2: date, stocktype in different layer
 v3: time split into y/m/d
-
+v4: replaced 1m open data with 5m candles
+    
 do scatter plot
 """
 tilldate = '2022-10-21'
@@ -38,9 +39,11 @@ from keras.callbacks import TensorBoard, LambdaCallback
 import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
 
-np.random.seed(1)
-python_random.seed(1)
-tf.random.set_seed(1)
+seed = 1
+
+np.random.seed(seed)
+python_random.seed(seed)
+tf.random.set_seed(seed)
 
 def shuffle(matrixs):
     widths = np.cumsum([0]+[matrix.shape[1] for matrix in matrixs])
@@ -139,7 +142,6 @@ def create_model(param):
     
     model = Model([input_layer, input_2], x)
     
-    # gradient = AdaBound(lr=5e-5, amsbound=True, final_lr=0.5)
     
     model.compile(
         optimizer = 'adam',
@@ -151,26 +153,19 @@ def create_model(param):
 if __name__ == '__main__':
     init()
 
-    np.random.seed(1)
-    python_random.seed(1)
-    tf.random.set_seed(1)
+    np.random.seed(seed)
+    python_random.seed(seed)
+    tf.random.set_seed(seed)
     
     x1 = np.vstack([data[stock] for stock in stocks])
     x2 = np.vstack([data2[stock] for stock in stocks])
     y  = np.vstack([targ[stock] for stock in stocks])
     x1, x2, y = shuffle((x1,x2,y))
     
-    np.random.seed(1)
-    python_random.seed(1)
-    tf.random.set_seed(1)
+    np.random.seed(seed)
+    python_random.seed(seed)
+    tf.random.set_seed(seed)
     
     model = create_model(0)
     candles = model.fit([x1, x2], y, epochs=256, batch_size=32,
                         validation_split=0.1, use_multiprocessing=True)
-    
-    # plt.plot(results.history['loss'], label='loss_0')
-    # plt.plot(results.history['val_loss'], label='val_0')
-
-    # plt.legend(loc='upper right')
-    # plt.show()
-    # callbacks=[LambdaCallback(None, save)])
