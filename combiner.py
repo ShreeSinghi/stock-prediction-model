@@ -12,14 +12,19 @@ Created on Sun Sep 25 11:52:37 2022
 @author: Shree
 
 need to remove diwali from days list in ohlc daily data else mismatch
+
+also if duplicates are found, values from old file are replaced
 """
 
 import pandas as pd
 import os
     
-nfiles = ['Intraday 1 Min Data\Consolidated\\NIFTY\\' + i for i in os.listdir('Intraday 1 Min Data\\Consolidated\\NIFTY')]
+nfiles = ['NIFTYnifty.csv.pkl']
 
-bfiles = ['Intraday 1 Min Data\Consolidated\\BNF\\' + i for i in os.listdir('Intraday 1 Min Data\\Consolidated\\BNF')]
+bfiles = ['BANKNIFTYbank.csv.pkl']
+
+nfiles += ['intranifty.pkl']
+bfiles += ['intrabank.pkl']
 
 ndfs = []
 
@@ -31,7 +36,7 @@ for nfile in nfiles:
         pass
 
 ndf = pd.concat(ndfs)
-ndf.sort_index(inplace=True)
+
 
 bdfs = []
 for bfile in bfiles:
@@ -42,7 +47,16 @@ for bfile in bfiles:
         pass
 
 bdf = pd.concat(bdfs)
+
+ndf = ndf[~ndf.index.duplicated(keep='first')]
+bdf = bdf[~bdf.index.duplicated(keep='first')]
+
+ndf.sort_index(inplace=True)
 bdf.sort_index(inplace=True)
+
+
+ndf.to_pickle('intranifty.pkl')
+bdf.to_pickle('intrabank.pkl')
 
 # for day in set(x[0] for x in ndf.index):
     # pass

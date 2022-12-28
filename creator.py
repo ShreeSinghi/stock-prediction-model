@@ -93,7 +93,6 @@ def create5(df):
     for i in range(n):
         df2[i:i+1] = df.o[i*5], max(df.h[i*5:i*5+5]), min(df.l[i*5:i*5+5]),df.c[i*5+4]
         if not i%10000: print(i,'/',n)
-    print(df2)
     return df2
 
 def createday(df):
@@ -108,15 +107,14 @@ def createday(df):
     
     df2['date'] = [x[0] for x in df2.index]
     df2.set_index('date', drop=True, inplace=True)
-    print(df2)
     return df2
 
 load_data()
-# fetch_data()
-pd.to_pickle(createday(data['nifty']), 'dnifty.pkl')
-pd.to_pickle(createday(data['bank']), 'dbank.pkl')
-pd.to_pickle(create5(data['nifty']), '5nifty.pkl')
-pd.to_pickle(create5(data['bank']), '5bank.pkl')
+fetch_data()
+##pd.to_pickle(createday(data['nifty']), 'dnifty.pkl')
+##pd.to_pickle(createday(data['bank']), 'dbank.pkl')
+##pd.to_pickle(create5(data['nifty']), '5nifty.pkl')
+##pd.to_pickle(create5(data['bank']), '5bank.pkl')
 
 # oneday = 24*60*60
 
