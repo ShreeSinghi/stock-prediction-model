@@ -110,11 +110,11 @@ def createday(df):
     return df2
 
 load_data()
-fetch_data()
-##pd.to_pickle(createday(data['nifty']), 'dnifty.pkl')
-##pd.to_pickle(createday(data['bank']), 'dbank.pkl')
-##pd.to_pickle(create5(data['nifty']), '5nifty.pkl')
-##pd.to_pickle(create5(data['bank']), '5bank.pkl')
+# fetch_data()
+# pd.to_pickle(createday(data['nifty']), 'dnifty.pkl')
+# pd.to_pickle(createday(data['bank']), 'dbank.pkl')
+# pd.to_pickle(create5(data['nifty']), '5nifty.pkl')
+# pd.to_pickle(create5(data['bank']), '5bank.pkl')
 
 # oneday = 24*60*60
 

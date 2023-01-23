@@ -16,8 +16,13 @@ v1: normal
 v2: date, stocktype in different layer
 v3: time split into y/m/d
 v4: replaced 1m open data with 5m candles
+v5: replaced 1st vanilla layer with LSTM layer
+
+v4 vs v5:
+    v5 is 900x slower
     
 do scatter plot
+
 """
 tilldate = '2022-10-21'
 
@@ -32,24 +37,23 @@ import random as python_random
 
 from keras.losses import logcosh
 from keras.models import load_model, Model
-from keras.layers import Dense, GaussianNoise, Input, Activation, Concatenate
+from keras.layers import Dense, GaussianNoise, Input, Activation, Concatenate, LSTM, Lambda
 from keras.regularizers import l2
 from keras import backend as K
 from keras.callbacks import TensorBoard, LambdaCallback
 import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
 
+tf.config.run_functions_eagerly(True)
 seed = 1
-
 np.random.seed(seed)
 python_random.seed(seed)
 tf.random.set_seed(seed)
 
 def shuffle(matrixs):
-    widths = np.cumsum([0]+[matrix.shape[1] for matrix in matrixs])
-    big = np.hstack(matrixs)
-    np.random.shuffle(big)
-    return [big[:,widths[i]:widths[i+1]].copy() for i in range(len(matrixs))]
+    rand = np.arange(len(matrixs[0]))
+    np.random.shuffle(rand)
+    return [matrix[rand] for matrix in matrixs]
     
 def scplt():
     plt.scatter(model.predict([x1,x2]), y)
@@ -62,13 +66,12 @@ def important():
 
 def init():
     global  data, idays, fdays, stocks, lens, targ, inlen, data2
-    global  bestnacc, bestbacc, besttacc, data2
 
     idays   = 3   #intra days
     fdays   = 5   #full days
     inlen   = fdays*4 + idays*312 + 5
 
-    stocks  = ['nifty', 'bank']
+    stocks  = ['nifty', 'bank', 'niftyF1', 'bankF1']
 
     data = {}; lens = {}; targ = {};  data2 = {};
     stds = {'nifty':8579., 'bank':20204., 'niftyt':84. , 'bankt':356.}
@@ -96,26 +99,26 @@ def init():
         weekdays = encoder.fit_transform(weekdays.reshape(-1,1))
         
         daily = np.vstack(( daily.o, daily.h, daily.l, daily.c )).ravel('F')
-        data[stock] = np.vstack((data[stock].o, data[stock].h, data[stock].l, data[stock].c)).ravel('F')
+        data[stock] = np.dstack((array(data[stock].o).reshape(-1, 78),
+                                 array(data[stock].h).reshape(-1, 78),
+                                 array(data[stock].l).reshape(-1, 78),
+                                 array(data[stock].c).reshape(-1, 78)))
 
-        lens[stock] = len(data[stock])//312 - idays - fdays
+        data[stock] = array([data[stock][i:i+idays] for i in range(fdays, len(data[stock])-idays+1)])[:-1]      
+        lens[stock] = len(data[stock])
 
-        stocktype = ((stock=='nifty') - (stock=='bank'))
-
-        enc1 = array([data[stock][(fdays+i)*312:(fdays+i+idays)*312] for i in range(lens[stock])])
+        stocktype = ((stock=='nifty') - (stock=='bank'))        
+        
         enc2 = array([daily[i*4:(fdays+i)*4] for i in range(lens[stock])])
-                
-        data[stock] = np.hstack((
-                                 enc1,
-                                 enc2,
-                                 weekdays[idays+fdays:],
-                      ))
+
         
         data2[stock] = np.hstack((
+                                  enc2,
                                   np.ones((lens[stock], 1)) * stocktype,
                                   years[idays+fdays:, None],    
                                   months[idays+fdays:, None],
-                                  days[idays+fdays:, None]
+                                  days[idays+fdays:, None],
+                                  weekdays[idays+fdays:],
                       ))
         
         daily = pd.read_pickle(f'd{stock}.pkl')
@@ -123,25 +126,30 @@ def init():
         targ[stock] = targ[stock][fdays+idays:, None]
 
 def create_model(param):    
-    input_layer = Input(shape=(inlen,))
-    input_2 = Input(shape=(4,))
+    input_i = Input(shape=(idays, 78, 4))
+    input_2 = Input(shape=(9 + fdays*4,))
     
-    x = Dense(64, use_bias=True)(input_layer)
+    lstmlayer = []
+    for i in range(idays):
+        lstmlayer.append(LSTM(10)(Lambda(lambda x: x[:,i])(input_i)))
+    
+    # x = Dense(64)(input_layer)
+    # x = Activation('relu')(x)
+    
+    x = Concatenate()([input_2]+lstmlayer)
+    
+    x = Dense(32)(x)
     x = Activation('relu')(x)
     
-    x = Concatenate()([x, input_2])
-    
-    x = Dense(32, use_bias=True)(x)
-    x = Activation('relu')(x)
-    
-    x = Dense(8, use_bias=True)(x)
+    x = Dense(8)(x)
     x = Activation('relu')(x)
 
-    x = Dense(1, use_bias=True)(x)
+    x = Dense(1)(x)
 
     
-    model = Model([input_layer, input_2], x)
+    model = Model([input_i, input_2], x)
     
+    # gradient = AdaBound(lr=5e-5, amsbound=True, final_lr=0.5)
     
     model.compile(
         optimizer = 'adam',

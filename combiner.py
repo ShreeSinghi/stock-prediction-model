@@ -11,8 +11,6 @@ Created on Sun Sep 25 11:52:37 2022
 
 @author: Shree
 
-need to remove diwali from days list in ohlc daily data else mismatch
-
 also if duplicates are found, values from old file are replaced
 """
 
@@ -22,9 +20,6 @@ import os
 nfiles = ['NIFTYnifty.csv.pkl']
 
 bfiles = ['BANKNIFTYbank.csv.pkl']
-
-nfiles += ['intranifty.pkl']
-bfiles += ['intrabank.pkl']
 
 ndfs = []
 
