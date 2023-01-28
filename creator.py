@@ -41,22 +41,21 @@ def clean(df):
         df.sort_index(inplace=True)
         lent = len(df.loc[date])
         if lent > 390:
-            df.drop(list(zip([date]*(lent-390), df.loc[date].index[390:])), inplace=True)
+            df.drop(list(zip([date]*(lent-390), df.loc[date].index[:-390])), inplace=True)
+        
+    ind = df.index
+    temp = times*(len(df)//390)
+    df['time'] = temp
+    df = df.set_index('time', append=True).droplevel(2)
+    df.sort_index(inplace=True)
 
-def hrToSec(hrs):
-    return hrs*60*60
-
-def getTime(from1970):
-    return from1970%oneday
+    return df
 
 def load_data():
     global stocks, data
-    data = pd.read_pickle('main2.pkl')
-    stocks = list(set(data.index.get_level_values(0)))
+    data = pd.read_pickle('pickles/newmain.pkl')
+    stocks = data.index.levels[0]
     print('Loaded data')
-
-def append(df):
-    global data
 
 def fetch_data():
     global data, now
@@ -76,16 +75,18 @@ def fetch_data():
         
         index = pd.MultiIndex.from_tuples(list(zip(dates, times)), names=["date", "time"])
         df = df.reset_index().drop('Datetime', axis=1).set_index(index)
-        clean(df)
+        df = clean(df)
         df = pd.concat({stock: df}, names=['stock'])
                 
         data = pd.concat([data, df]).sort_index()
         data = data[~data.index.duplicated(keep='last')]
-        print(data.loc[stock])
+
         # data.to_pickle(f'intra{stock}.pkl')
-    
+        
+    df.sort_index(inplace=True)
     print('Fetched data')
 
+# creates 5m candle data
 def create5(df):
     if len(df)%390 != 0:
         raise ValueError
@@ -97,6 +98,7 @@ def create5(df):
         if not i%10000: print(i,'/',n)
     return df2
 
+# creates 1d candle data
 def createday(df):
     if len(df)%390 != 0:
         raise ValueError
@@ -112,12 +114,11 @@ def createday(df):
     return df2
 
 load_data()
-fetch_data()
+# fetch_data()
 
-# pd.to_pickle(createday(data['nifty']), 'dnifty.pkl')
-# pd.to_pickle(createday(data['bank']), 'dbank.pkl')
-# pd.to_pickle(create5(data['nifty']), '5nifty.pkl')
-# pd.to_pickle(create5(data['bank']), '5bank.pkl')
+for stock in stocks:
+    pd.to_pickle(createday(data.loc[stock]), f'pickles/d{stock}.pkl')
+    pd.to_pickle(create5(data.loc[stock]), f'pickles/5{stock}.pkl')
 
 # oneday = 24*60*60
 
