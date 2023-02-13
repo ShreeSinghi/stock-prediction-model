@@ -8,7 +8,8 @@ test results:
     .first layer best: 64
     .second layer best: 32
     .third layer best: 32
-    .fourth layer best: 8
+    .fourth layer best: 16
+    .fifth layer best: 8
     .activator best: relu (but it causes freezing sometimes so next best is
                            leaky relu)  
     .optimiser best: adam/nadam
@@ -21,7 +22,7 @@ v4: replaced 1m open data with 5m candles
 v5: replaced 1st vanilla layer with LSTM layer
 v6: .replaced with vanilla layer again
     .added one hot encoded day and month
-    .added another hidden layer
+    .added 2 hidden layers
 
 v4 vs v5:
     v5 is 900x slower
@@ -48,8 +49,10 @@ import random as python_random
 
 from keras.losses import logcosh
 from keras.models import load_model, Model
-from keras.layers import Dense, GaussianNoise, Input, Activation, Concatenate, LSTM, Lambda
+from keras.layers import Dense, GaussianNoise, Input, Activation, Concatenate, LSTM, Lambda, Dropout
 from keras.regularizers import l2
+from tensorflow.keras.constraints import MaxNorm
+from keras.optimizers import Adam
 from keras import backend as K
 from keras.callbacks import TensorBoard, LambdaCallback
 import tensorflow as tf
@@ -165,8 +168,15 @@ def create_model(param):
         
     x = Dense(32, use_bias=True)(x)
     x = Activation('relu')(x)
-    
+
     x = Concatenate()([x, input_2])
+    x = GaussianNoise(0.05)(x)
+
+    x = Dense(32, use_bias=True)(x)
+    x = Activation('relu')(x)
+
+    x = Dense(32, use_bias=True)(x)
+    x = Activation('relu')(x)
     
     x = Dense(8, use_bias=True)(x)
     x = Activation('relu')(x)
@@ -178,7 +188,7 @@ def create_model(param):
     
     
     model.compile(
-        optimizer = 'adam',
+        optimizer = Adam(1e-3),
         loss = 'mean_squared_logarithmic_error'
     )
     
@@ -201,5 +211,5 @@ if __name__ == '__main__':
     tf.random.set_seed(seed)
     
     model = create_model(0)
-    added = model.fit([x1, x2], y, epochs=512, batch_size=64,
-                        validation_split=0.2, use_multiprocessing=True)
+    dropnoise3 = model.fit([x1, x2], y, epochs=4096, batch_size=64,
+                        validation_split=0.2, use_multiprocessing=True, verbose=1)

@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['creator.py', 'classifierv4.py', '../../../../../../media/shree/01D925ABC75E9480/Users/LENOVO/Dropbox/Python/Stocks Stuff/Revamp/classifierv5.py']
+recent_files = ['creator.py', 'classifierv6.py']
 
 [main]
 version = 0.2.0

@@ -43,7 +43,6 @@ def clean(df):
         if lent > 390:
             df.drop(list(zip([date]*(lent-390), df.loc[date].index[:-390])), inplace=True)
         
-    ind = df.index
     temp = times*(len(df)//390)
     df['time'] = temp
     df = df.set_index('time', append=True).droplevel(2)
@@ -114,11 +113,11 @@ def createday(df):
     return df2
 
 load_data()
-# fetch_data()
+fetch_data()
 
-for stock in stocks:
-    pd.to_pickle(createday(data.loc[stock]), f'pickles/d{stock}.pkl')
-    pd.to_pickle(create5(data.loc[stock]), f'pickles/5{stock}.pkl')
+# for stock in stocks:
+#     pd.to_pickle(createday(data.loc[stock]), f'pickles/d{stock}.pkl')
+#     pd.to_pickle(create5(data.loc[stock]), f'pickles/5{stock}.pkl')
 
 # oneday = 24*60*60
 
